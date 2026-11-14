@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADWI - Space Mission Game</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Arial,sans-serif;color:white;
+  background:#080d20;
+}
+header{
+  text-align:center;padding:22px 12px;
+  background:linear-gradient(120deg,#171c48,#38216b);
+}
+header h1{margin:0;font-size:30px}
+header p{color:#d5d7ff;margin-bottom:0}
+.container{max-width:1100px;margin:auto;padding:18px}
+.card{
+  background:#151d39;border:1px solid #34416c;
+  border-radius:14px;padding:18px;margin:15px 0;
+}
+h2{color:#aebaff;margin-top:0}
+label{display:block;margin:12px 0 5px}
+select,input{
+  width:100%;padding:11px;border-radius:8px;
+  border:1px solid #59658d;background:#0b1330;color:white;
+}
+button{
+  padding:12px 18px;border:0;border-radius:9px;
+  background:#7666f5;color:white;font-weight:bold;
+  cursor:pointer;margin:7px 4px 4px 0;
+}
+button:hover{background:#9589ff}
+button:disabled{opacity:.5;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.stat{
+  background:#202b50;padding:12px;border-radius:10px;
+  text-align:center;
+}
+.stat strong{display:block;font-size:22px;color:#b8c4ff;margin-top:5px}
+.small{font-size:13px;color:#c4c9e5}
+.check{display:flex;align-items:center;gap:9px;margin:10px 0}
+.check input{width:auto}
+#rocketScene{
+  height:370px;position:relative;overflow:hidden;
+  border-radius:14px;border:1px solid #46517c;
+  background:radial-gradient(ellipse at bottom,#252b61 0%,#111832 45%,#050918 100%);
+}
+.star{
+  position:absolute;width:3px;height:3px;border-radius:50%;
+  background:white;animation:twinkle 2s infinite alternate;
+}
+@keyframes twinkle{from{opacity:.2}to{opacity:1}}
+#earth{
+  position:absolute;width:150px;height:150px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#83e2ff,#2874c9 50%,#10275d 75%);
+  bottom:-100px;left:calc(50% - 75px);
+  box-shadow:0 0 35px #3d8dff;
+}
+#rocket{
+  position:absolute;font-size:65px;left:calc(50% - 32px);
+  bottom:30px;transform:rotate(-45deg);
+  display:none;z-index:3;
+}
+#flame{
+  position:absolute;left:calc(50% - 10px);bottom:15px;
+  font-size:35px;display:none;z-index:2;
+}
+#launchText{
+  position:absolute;top:18px;width:100%;text-align:center;
+  font-size:18px;color:#dce2ff;
+}
+@keyframes fly{
+  0%{bottom:30px;left:calc(50% - 32px);transform:rotate(-45deg) scale(1)}
+  45%{bottom:190px;left:65%;transform:rotate(-45deg) scale(.8)}
+  100%{bottom:420px;left:85%;transform:rotate(-45deg) scale(.35)}
+}
+@keyframes flameMove{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.4;transform:scale(1.4)}
+}
+.result{padding:15px;border-radius:10px;background:#202b50;margin-top:12px}
+.good{color:#75efa5}.bad{color:#ff8e9a}.warning{color:#ffd77a}
+footer{text-align:center;color:#929cbd;padding:25px;font-size:13px}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>🚀 ADWI: SPACE MISSION CONTROL</h1>
+  <p>Design your spacecraft. Make smart choices. Launch your mission!</p>
+</header>
+
+<div class="container">
+
+<div class="card">
+<h2>🌎 1. Start Your Mission</h2>
+<div class="grid">
+  <div>
+    <label>Mission name</label>
+    <input id="missionName" value="Adwi Explorer">
+  </div>
+  <div>
+    <label>Mission destination</label>
+    <select id="destination">
+      <option value="Earth">Earth Orbit</option>
+      <option value="Moon">The Moon</option>
+      <option value="Mars">Mars</option>
+      <option value="Asteroid">Asteroid</option>
+    </select>
+  </div>
+  <div>
+    <label>Mission objective</label>
+    <select id="objective">
+      <option value="images">Take pictures and study the surface</option>
+      <option value="water">Search for water or ice</option>
+      <option value="weather">Study weather and atmosphere</option>
+      <option value="rocks">Study rocks and minerals</option>
+    </select>
+  </div>
+  <div>
+    <label>Difficulty</label>
+    <select id="difficulty">
+      <option value="beginner">Beginner</option>
+      <option value="intermediate">Intermediate</option>
+      <option value="sandbox">Sandbox (experiment freely)</option>
+    </select>
+  </div>
+  <div>
+    <label>Players</label>
+    <select id="players" onchange="showRoles()">
+      <option value="1">1 player</option>
+      <option value="2">2 players</option>
+      <option value="3">3 players</option>
+      <option value="4">4 players</option>
+    </select>
+  </div>
+</div>
+<div id="roles" class="small"></div>
+</div>
+
+<div class="card">
+<h2>🛰️ 2. Design Your Spacecraft</h2>
+<p class="small">Choose your spacecraft systems. Every choice affects your mission resources.</p>
+
+<div class="grid">
+  <div>
+    <label>Spacecraft structure</label>
+    <select id="structure">
+      <option value="basic">Basic structure — light and cheap</option>
+      <option value="strong">Reinforced structure — stronger but heavier</option>
+      <option value="advanced">Advanced structure — balanced design</option>
+    </select>
+  </div>
+  <div>
+    <label>Power system</label>
+    <select id="power">
+      <option value="small">Small solar panels</option>
+      <option value="large">Large solar panels</option>
+      <option value="nuclear">Advanced power unit</option>
+    </select>
+  </div>
+  <div>
+    <label>Communication system</label>
+    <select id="comms">
+      <option value="basic">Basic antenna</option>
+      <option value="advanced">High-gain antenna</option>
+    </select>
+  </div>
+  <div>
+    <label>Onboard computer</label>
+    <select id="computer">
+      <option value="basic">Basic computer</option>
+      <option value="advanced">Advanced computer</option>
+    </select>
+  </div>
+  <div>
+    <label>Attitude control</label>
+    <select id="control">
+      <option value="basic">Basic control system</option>
+      <option value="advanced">Advanced control system</option>
+    </select>
+  </div>
+</div>
+</div>
+
+<div class="card">
+<h2>🔬 3. Choose Scientific Instruments</h2>
+<p class="small">Instruments collect scientific information. More instruments mean more science, but they also use more resources.</p>
+<div class="grid">
+  <label class="check"><input type="checkbox" class="instrument" value="camera" checked> 📷 Camera — surface images</label>
+  <label class="check"><input type="checkbox" class="instrument" value="scanner"> 🔍 Surface scanner — maps the surface</label>
+  <label class="check"><input type="checkbox" class="instrument" value="thermal"> 🌡️ Thermal sensor — measures temperature</label>
+  <label class="check"><input type="checkbox" class="instrument" value="spectrometer"> 🧪 Spectrometer — studies materials</label>
+  <label class="check"><input type="checkbox" class="instrument" value="radar"> 📡 Radar — studies hidden features</label>
+</div>
+</div>
+
+<div class="card">
+<h2>🚀 4. Select Launch Vehicle and Orbit</h2>
+<div class="grid">
+  <div>
+    <label>Launch vehicle</label>
+    <select id="launcher">
+      <option value="small">Small launcher — 300 kg capacity</option>
+      <option value="medium">Medium launcher — 800 kg capacity</option>
+      <option value="heavy">Heavy launcher — 1500 kg capacity</option>
+    </select>
+  </div>
+  <div>
+    <label>Orbit / flight path</label>
+    <select id="orbit">
+      <option value="low">Low orbit — close observations</option>
+      <option value="high">High orbit — wider coverage</option>
+      <option value="transfer">Transfer path — travel to another world</option>
+    </select>
+  </div>
+</div>
+<p class="small" id="orbitInfo">Low orbit is useful for detailed observations close to a planet.</p>
+</div>
+
+<div class="card">
+<h2>📊 5. Mission Resource Dashboard</h2>
+<p class="small">Your resources update as you change your design.</p>
+<div class="grid">
+  <div class="stat">Spacecraft mass<strong id="mass">0 kg</strong></div>
+  <div class="stat">Power supply<strong id="supply">0 units</strong></div>
+  <div class="stat">Power demand<strong id="demand">0 units</strong></div>
+  <div class="stat">Estimated budget<strong id="budget">0 credits</strong></div>
+  <div class="stat">Data generated<strong id="data">0 GB</strong></div>
+  <div class="stat">Communication capacity<strong id="communication">0 GB</strong></div>
+  <div class="stat">Mission lifetime<strong id="lifetime">0 years</strong></div>
+  <div class="stat">Scientific value<strong id="science">0 points</strong></div>
+</div>
+<div id="designCheck" class="result">Change your design to see your mission status.</div>
+<button onclick="updateDashboard()">🔄 Check My Design</button>
+</div>
+
+<div class="card">
+<h2>🌌 6. Launch Your Mission!</h2>
+<div id="rocketScene">
+  <div id="launchText">Your rocket is waiting for launch...</div>
+  <div id="earth"></div>
+  <div id="rocket">🚀</div>
+  <div id="flame">🔥</div>
+</div>
+<button id="launchButton" onclick="launchMission()">🚀 LAUNCH MISSION</button>
+<button onclick="resetLaunch()">Reset launch</button>
+<div id="launchResult" class="result">Your mission results will appear here.</div>
+</div>
+
+<div class="card">
+<h2>🏆 7. Mission Score and Report</h2>
+<div class="grid">
+  <div class="stat">Mission score<strong id="score">--</strong></div>
+  <div class="stat">Mission status<strong id="status">Not launched</strong></div>
+</div>
+<div id="feedback" class="result">Complete your design and launch to receive feedback.</div>
+<button onclick="downloadReport()">📄 Download Mission Report</button>
+<button onclick="saveMission()">💾 Save Mission</button>
+<button onclick="compareMission()">📋 Compare Saved Mission</button>
+<button onclick="resetGame()">🔁 Start New Mission</button>
+</div>
+
+<div class="card">
+<h2>📚 Space Science Learning Corner</h2>
+<p><b>Mass:</b> How heavy your spacecraft is. Your rocket must be able to carry it.</p>
+<p><b>Power:</b> The energy needed to operate your spacecraft and instruments.</p>
+<p><b>Budget:</b> The money available to build and operate your mission.</p>
+<p><b>Data:</b> The information collected by your scientific instruments.</p>
+<p><b>Communications:</b> How much information your spacecraft can send back to Earth.</p>
+<p><b>Orbit:</b> The path a spacecraft follows around a planet or another object.</p>
+<p><b>Mission lifetime:</b> How long your spacecraft is expected to operate.</p>
+<p><b>Trade-off:</b> Improving one part of a mission may make another part harder. Good engineers balance everything!</p>
+<p class="small">This game uses simplified educational values, not real spacecraft engineering calculations.</p>
+</div>
+
+</div>
+<footer>ADWI SPACE MISSION CONTROL • Explore • Design • Discover</footer>
+
+<script>
+const instruments = {
+ camera:{mass:20,power:10,cost:50,data:20,science:20},
+ scanner:{mass:35,power:20,cost:80,data:35,science:30},
+ thermal:{mass:15,power:8,cost:40,data:10,science:15},
+ spectrometer:{mass:40,power:25,cost:100,data:40,science:35},
+ radar:{mass:50,power:30,cost:120,data:50,science:40}
+};
+
+const structures = {
+ basic:{mass:100,cost:100},
+ strong:{mass:180,cost:180},
+ advanced:{mass:140,cost:150}
+};
+const powers = {
+ small:{mass:30,supply:35,cost:60},
+ large:{mass:60,supply:75,cost:120},
+ nuclear:{mass:90,supply:110,cost:200}
+};
+const communications = {
+ basic:{mass:15,capacity:40,cost:40},
+ advanced:{mass:35,capacity:100,cost:100}
+};
+const computers = {
+ basic:{mass:15,power:8,cost:30},
+ advanced:{mass:30,power:15,cost:70}
+};
+const controls = {
+ basic:{mass:20,power:7,cost:35},
+ advanced:{mass:35,power:12,cost:75}
+};
+const launchers = {
+ small:{capacity:300,cost:100},
+ medium:{capacity:800,cost:250},
+ heavy:{capacity:1500,cost:450}
+};
+
+let latestReport = null;
+let savedMission = null;
+let launched = false;
+
+function showRoles(){
+ const names=["Mission Planner","Spacecraft Engineer","Science Officer","Communications & Resources Officer"];
+ const count=Number(document.getElementById("players").value);
+ document.getElementById("roles").innerHTML =
+ "Team roles: "+names.slice(0,count).map((n,i)=>"Player "+(i+1)+": "+n).join(" • ");
+}
+showRoles();
+
+function getDesign(){
+ const structure=structures[document.getElementById("structure").value];
+ const power=powers[document.getElementById("power").value];
+ const comm=communications[document.getElementById("comms").value];
+ const computer=computers[document.getElementById("computer").value];
+ const control=controls[document.getElementById("control").value];
+ const launcher=launchers[document.getElementById("launcher").value];
+ const selected=[...document.querySelectorAll(".instrument:checked")].map(x=>x.value);
+
+ let mass=structure.mass+power.mass+comm.mass+computer.mass+control.mass;
+ let demand=computer.power+control.power+8;
+ let cost=structure.cost+power.cost+comm.cost+computer.cost+control.cost+launcher.cost;
+ let data=0,science=0;
+
+ selected.forEach(id=>{
+  let x=instruments[id];
+  mass+=x.mass;demand+=x.power;cost+=x.cost;
+  data+=x.data;science+=x.science;
+ });
+
+ let orbit=document.getElementById("orbit").value;
+ let destination=document.getElementById("destination").value;
+ let orbitBonus=orbit==="high"?15:orbit==="transfer"?5:25;
+ let lifetime=power.supply>=demand?5:2;
+ if(power.supply>=demand+20)lifetime=8;
+ if(destination==="Mars"||destination==="Asteroid")lifetime-=1;
+
+ let budgetLimit=Number(document.getElementById("difficulty").value==="beginner"?1100:
+ document.getElementById("difficulty").value==="intermediate"?900:99999);
+ let dataCapacity=comm.capacity;
+
+ return {mass,demand,supply:power.supply,cost,data,science,launcher,
+ dataCapacity,lifetime,orbitBonus,budgetLimit,selected,destination,orbit};
+}
+
+function updateDashboard(){
+ const d=getDesign();
+ document.getElementById("mass").textContent=d.mass+" kg";
+ document.getElementById("supply").textContent=d.supply+" units";
+ document.getElementById("demand").textContent=d.demand+" units";
+ document.getElementById("budget").textContent=d.cost+" credits";
+ document.getElementById("data").textContent=d.data+" GB";
+ document.getElementById("communication").textContent=d.dataCapacity+" GB";
+ document.getElementById("lifetime").textContent=d.lifetime+" years";
+ document.getElementById("science").textContent=d.science+" points";
+
+ let issues=[];
+ if(d.mass>d.launcher.capacity)issues.push("Your spacecraft is too heavy for this launch vehicle.");
+ if(d.supply<d.demand)issues.push("Your spacecraft needs more power.");
+ if(d.cost>d.budgetLimit)issues.push("Your design is over the budget.");
+ if(d.data>d.dataCapacity)issues.push("Your communications system cannot send all the data.");
+
+ let box=document.getElementById("designCheck");
+ if(issues.length){
+  box.innerHTML="<b class='bad'>⚠ Design needs improvement</b><br>"+issues.join("<br>");
+ }else{
+  box.innerHTML="<b class='good'>✓ Your design is ready for launch!</b><br>All major resource checks have passed. You can still improve your scientific score.";
+ }
+ return d;
+}
+
+document.querySelectorAll("select,input").forEach(el=>{
+ el.addEventListener("change",()=>{
+  updateDashboard();
+  if(el.id==="orbit"){
+   let descriptions={
+    low:"Low orbit is useful for detailed observations close to a planet.",
+    high:"High orbit gives a wider view but may make detailed observations harder.",
+    transfer:"A transfer path helps a spacecraft travel to another world."
+   };
+   document.getElementById("orbitInfo").textContent=descriptions[el.value];
+  }
+ });
+});
+
+function resetLaunch(){
+ launched=false;
+ document.getElementById("rocket").style.display="none";
+ document.getElementById("flame").style.display="none";
+ document.getElementById("rocket").style.animation="none";
+ document.getElementById("launchText").textContent="Your rocket is waiting for launch...";
+ document.getElementById("launchResult").textContent="Ready for launch.";
+ document.getElementById("launchButton").disabled=false;
+}
+
+function launchMission(){
+ if(launched)return;
+ const d=updateDashboard();
+ const issues=[];
+ if(d.mass>d.launcher.capacity)issues.push("Mass exceeds launch vehicle capacity");
+ if(d.supply<d.demand)issues.push("Not enough power");
+ if(d.cost>d.budgetLimit)issues.push("Budget exceeded");
+ if(d.data>d.dataCapacity)issues.push("Not enough communication capacity");
+
+ const difficulty=document.getElementById("difficulty").value;
+ if(issues.length && difficulty!=="sandbox"){
+  document.getElementById("launchResult").innerHTML="<b class='bad'>Launch cancelled!</b><br>"+issues.join("<br>")+". Fix your design first.";
+  return;
+ }
+
+ launched=true;
+ document.getElementById("launchButton").disabled=true;
+ const rocket=document.getElementById("rocket");
+ const flame=document.getElementById("flame");
+ rocket.style.display="block";
+ flame.style.display="block";
+ rocket.style.animation="fly 6s ease-in forwards";
+ flame.style.animation="flameMove .25s infinite";
+
+ let count=5;
+ document.getElementById("launchText").textContent="Countdown: 5";
+ const timer=setInterval(()=>{
+  count--;
+  if(count>0){
+   document.getElementById("launchText").textContent="Countdown: "+count;
+  }else{
+   clearInterval(timer);
+   document.getElementById("launchText").textContent="🔥 LIFTOFF! Your rocket is heading into space!";
+   setTimeout(()=>finishMission(d,issues),6100);
+  }
+ },1000);
+}
+
+function finishMission(d,issues){
+ document.getElementById("flame").style.display="none";
+ const difficulty=document.getElementById("difficulty").value;
+ const events=[
+  {name:"Solar storm",effect:-8,detail:"A solar storm reduced your available power."},
+  {name:"Clear communication",effect:8,detail:"Your spacecraft sent data back successfully."},
+  {name:"Dust disturbance",effect:-5,detail:"Dust affected one of your instruments."},
+  {name:"Successful observation",effect:10,detail:"Your spacecraft made an excellent observation."}
+ ];
+ const event=events[Math.floor(Math.random()*events.length)];
+ let score=30+d.science+d.orbitBonus;
+ if(d.supply>=d.demand)score+=10;
+ if(d.mass<=d.launcher.capacity)score+=10;
+ if(d.cost<=d.budgetLimit)score+=10;
+ if(d.data<=d.dataCapacity)score+=10;
+ score+=event.effect;
+ if(issues.length)score-=25;
+ if(d.selected.length===0)score-=15;
+ score=Math.max(0,Math.min(100,score));
+
+ let success=score>=60 && (issues.length===0 || difficulty==="sandbox");
+ let status=success?"MISSION SUCCESS":"MISSION NEEDS IMPROVEMENT";
+ document.getElementById("score").textContent=score+"/100";
+ document.getElementById("status").textContent=success?"Successful":"Try again";
+ document.getElementById("launchResult").innerHTML=
+ "<b class='"+(success?"good":"warning")+"'>"+status+"</b><br>"+
+ "Random event: "+event.name+". "+event.detail;
+
+ let feedback=success?
+ "Great work! Your mission reached its objective. You balanced your spacecraft design and resources.":
+ "Your mission needs some improvements. Try changing the power system, instruments, launcher or communications system.";
+
+ if(d.supply<d.demand)feedback+=" Add a stronger power system.";
+ if(d.mass>d.launcher.capacity)feedback+=" Choose a larger launch vehicle or reduce spacecraft mass.";
+ if(d.cost>d.budgetLimit)feedback+=" Reduce your costs.";
+ if(d.data>d.dataCapacity)feedback+=" Choose a stronger communication system or fewer data-producing instruments.";
+ if(d.selected.length===0)feedback+=" Add at least one scientific instrument.";
+
+ document.getElementById("feedback").innerHTML=
+ "<b>Mission feedback:</b> "+feedback+"<br><br><b>Unexpected event:</b> "+event.detail;
+
+ latestReport={
+  name:document.getElementById("missionName").value,
+  destination:d.destination,
+  objective:document.getElementById("objective").selectedOptions[0].text,
+  difficulty,score,status,event:event.name,
+  mass:d.mass,power:d.supply+"/"+d.demand,
+  budget:d.cost,data:d.data,communications:d.dataCapacity,
+  lifetime:d.lifetime,instruments:d.selected
+ };
+}
+
+function downloadReport(){
+ if(!latestReport){
+  alert("Launch a mission first to create your report!");
+  return;
+ }
+ const r=latestReport;
+ const content=
+`ADWI SPACE MISSION REPORT
+-------------------------
+Mission: ${r.name}
+Destination: ${r.destination}
+Objective: ${r.objective}
+Difficulty: ${r.difficulty}
+Result: ${r.status}
+Score: ${r.score}/100
+
+SPACECRAFT DETAILS
+Mass: ${r.mass} kg
+Power supply/demand: ${r.power}
+Budget: ${r.budget} credits
+Data generated: ${r.data} GB
+Communication capacity: ${r.communications} GB
+Estimated lifetime: ${r.lifetime} years
+Instruments: ${r.instruments.join(", ")}
+
+Random event: ${r.event}
+
+Thank you for playing ADWI SPACE MISSION CONTROL!`;
+ const blob=new Blob([content],{type:"text/plain"});
+ const link=document.createElement("a");
+ link.href=URL.createObjectURL(blob);
+ link.download="adwi-mission-report.txt";
+ link.click();
+ URL.revokeObjectURL(link.href);
+}
+
+function saveMission(){
+ const d=updateDashboard();
+ savedMission={
+  name:document.getElementById("missionName").value,
+  mass:d.mass,cost:d.cost,science:d.science,
+  instruments:d.selected.join(", ")
+ };
+ localStorage.setItem("adwiSavedMission",JSON.stringify(savedMission));
+ alert("Mission design saved on this device!");
+}
+
+function compareMission(){
+ const old=JSON.parse(localStorage.getItem("adwiSavedMission")||"null");
+ if(!old){alert("Save a mission design first!");return;}
+ const now=updateDashboard();
+ alert("SAVED MISSION: "+old.name+
+ "\nMass: "+old.mass+" kg"+
+ "\nCost: "+old.cost+
+ "\nScience: "+old.science+
+ "\nInstruments: "+old.instruments+
+ "\n\nCURRENT DESIGN"+
+ "\nMass: "+now.mass+" kg"+
+ "\nCost: "+now.cost+
+ "\nScience: "+now.science+
+ "\nInstruments: "+now.selected.join(", "));
+}
+
+function resetGame(){
+ if(!confirm("Start a new mission? Your current design will be reset."))return;
+ document.getElementById("missionName").value="Adwi Explorer";
+ document.getElementById("destination").value="Earth";
+ document.getElementById("objective").value="images";
+ document.getElementById("difficulty").value="beginner";
+ document.getElementById("players").value="1";
+ document.getElementById("structure").value="basic";
+ document.getElementById("power").value="small";
+ document.getElementById("comms").value="basic";
+ document.getElementById("computer").value="basic";
+ document.getElementById("control").value="basic";
+ document.getElementById("launcher").value="small";
+ document.getElementById("orbit").value="low";
+ document.querySelectorAll(".instrument").forEach(x=>x.checked=x.value==="camera");
+ document.getElementById("score").textContent="--";
+ document.getElementById("status").textContent="Not launched";
+ document.getElementById("feedback").textContent="Complete your design and launch to receive feedback.";
+ latestReport=null;
+ resetLaunch();
+ showRoles();
+ updateDashboard();
+}
+
+function addStars(){
+ const scene=document.getElementById("rocketScene");
+ for(let i=0;i<65;i++){
+  const star=document.createElement("div");
+  star.className="star";
+  star.style.left=Math.random()*100+"%";
+  star.style.top=Math.random()*100+"%";
+  star.style.animationDelay=Math.random()*2+"s";
+  scene.appendChild(star);
+ }
+}
+addStars();
+updateDashboard();
+</script>
+</body>
+</html>
